@@ -374,7 +374,9 @@ function getCol(params) {
   // Replace default params with provided params.
   if (params) {
     for (var param in params) {
-      _params[param] = params[param] || _params[param];
+      if (params[param] != null) {
+        _params[param] = params[param];
+      }
     }
   }
 
