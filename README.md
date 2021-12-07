@@ -8,6 +8,41 @@ cloud mask.
 
 ![](/docs/msscvm_demo_01.png)
 
+## Python Guide
+
+### Installation
+
+Clone the repository: `git clone https://github.com/boothmanrylan/msslib.git`
+
+The file structure should be:
+
+```
+msslib
+|---msslib
+|   |---__init__.py
+|   |---msslib.py
+|--setup.py
+|--msslib.js
+|--README.md
+```
+
+From the top msslib directory run: `pip install .`
+
+### Usage
+
+Import the earthengine api, authenticate it, and initialize it *before*
+importing msslib.
+
+```
+import ee
+ee.Authenticate()
+ee.Initialize()
+
+from msslib import msslib
+```
+
+From here you should be able to use msslib in python following the below guide.
+
 ## Guide
 
 ### Module import
