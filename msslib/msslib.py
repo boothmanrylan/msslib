@@ -139,8 +139,43 @@ def filterById(col, imgList):
     return ee.ImageCollection(ee.List(imgList).iterate(_filterById, col))
 
 
+def _getById(imageID, col):
+    """Returns the image in col whose ID matches image ID.
+
+    Uses the LANDSAT_SCENE_ID metadata property as image ID. If no image in
+    col has the matching ID, returns None.
+
+    Args:
+        imageID: A string containing the LANDSAT_SCENE_ID to get.
+        col: An ee.ImageCollection to filter
+
+    Returns:
+        The image in col with the matching imageID, if such an image exists.
+    """
+    filt = ee.Filter.eq('LANDSAT_SCENE_ID', imageID)
+    return ee.ImageCollection(col).filter(filt).first()
+
+
+def getById(col, imgList):
+    """Excludes all images in a collection whose id is NOT in imgList
+
+    Used in the msslib.filterCol() method.
+
+    Args:
+        col: an ee.ImageCollection to filter.
+        imgList: A list of all image IDs to keep in the collection, given as
+            image's system:index property.
+
+    Returns:
+        The filtered image collection.
+    """
+    return ee.ImageCollection(ee.List(imgList).map(
+        lambda imageId: _getById(imageId, col), dropNulls=True
+    ))
+
+
 def filterCol(col, aoi, maxRmseVerify, maxCloudCover, yearRange, doyRange,
-              excludeIds, wrs):
+              excludeIds, includeIds, wrs):
     """Filters an MSS image collection by bounds, date, and quality properties
 
     By default, it excludes images that do not have all four reflectance bands
@@ -161,7 +196,9 @@ def filterCol(col, aoi, maxRmseVerify, maxCloudCover, yearRange, doyRange,
             for which images will be returned.
         doyRange: A 2-tuple contianing the start day of year and end day of
             year for which images will be returned.
-        excludIds: list of image IDs to be excluded using msslib.filterById.
+        excludeIds: list of image IDs to be excluded using msslib.filterById.
+        includeIds: list of image IDs that can be included the output
+            collection, passed to msslib.getById.
         wrs: A string (either 'wrs1' or 'wrs2') indicating whether the image
             collection contains WRS-1 or WRS-2 images.
 
@@ -203,11 +240,15 @@ def filterCol(col, aoi, maxRmseVerify, maxCloudCover, yearRange, doyRange,
     if excludeIds is not None:
         col = filterById(col, excludeIds)
 
+    if includeIds is not None:
+        col = getById(col, includeIds)
+
     return col
 
 
 def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
-           yearRange=[1972, 2000], doyRange=[1, 365], excludeIds=None):
+           yearRange=[1972, 2000], doyRange=[1, 365], excludeIds=None,
+           includeIds=None):
     """Assembles a Landsat MSS image collection.
 
     Includes images from USGS Collection 1 T1 and T2 acquired by satellites
@@ -235,7 +276,8 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
             for which images will be returned.
         doyRange: A 2-tuple contianing the start day of year and end day of
             year for which images will be returned.
-        excludIds: list of image IDs to be excluded using msslib.filterById.
+        excludeIds: list of image IDs to be excluded using msslib.filterById.
+        includeIds: list of image IDS to be included using msslib.getById.
 
     Returns:
         An ee.ImageCollection
@@ -246,7 +288,8 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
     params = {
         'aoi': aoi, 'maxRmseVerify': maxRmseVerify,
         'maxCloudCover': maxCloudCover, 'yearRange': yearRange,
-        'doyRange': doyRange, 'excludeIds': excludeIds
+        'doyRange': doyRange, 'excludeIds': excludeIds,
+        'includeIds': includeIds
     }
 
     def _wrs1_filter(x): return filterCol(x, wrs='wrs1', **params)
@@ -309,12 +352,12 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
             msslib.calcToa() or msslib.addNdvi().
         visParams: A dictionary of visualization parameters passed to
             getThumbUrl().
-        toa: A bool indicating whether to call calcToa on images before they are
-            displayed.
-        rad: A bool indicating whether to call calcRad on images before they are
-            displayed.
-        ndvi: A bool indicating whehter to call addNdvi on image before they are
-            displayed.
+        toa: A bool indicating whether to call calcToa on images before they
+            are displayed.
+        rad: A bool indicating whether to call calcRad on images before they
+            are displayed.
+        ndvi: A bool indicating whehter to call addNdvi on image before they
+            are displayed.
 
     Returns:
         None
