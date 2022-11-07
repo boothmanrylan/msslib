@@ -7,9 +7,6 @@ The intent of the original msslib is "to make it easy to work with Landsat MSS
 data in Earth Engine." The intent of this port to python is to make it easier
 to work with Landsat MSS images when using the Earth Engine python api.
 
-The following methods from the original msslib are not implemented here:
-    getPr()
-
 You should import the earthengine python api and authenticate and initialize it
 before importing the msslib.
 
@@ -103,6 +100,12 @@ def getWrs1GranuleGeom(granuleId):
         'centroid': centroid,
         'bounds': bounds
     })
+
+
+def getPr(img):
+    path = img.getNumber('WRS_PATH').format('%03d')
+    row = img.getNumber('WRS_ROW').format('%03d')
+    return path.cat(row)
 
 
 def _filterById(id, col):
