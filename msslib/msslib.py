@@ -507,7 +507,7 @@ def addTc(img):
     tcb = bands.multiply(tcbCoeffs).reduce(ee.Reducer.sum()).toFloat()
     tcg = bands.multiply(tcgCoeffs).reduce(ee.Reducer.sum()).toFloat()
     tcy = bands.multiply(tcyCoeffs).reduce(ee.Reducer.sum()).toFloat()
-    tca = (tcg.divide(tcb)).atan().multiply(180 / math.PI).toFloat()
+    tca = (tcg.divide(tcb)).atan().multiply(180 / math.pi).toFloat()
     tc = ee.Image.cat(tcb, tcg, tcy, tca).rename('tcb', 'tcg', 'tcy', 'tca')
     return ee.Image(img.addBands(tc).copyProperties(img, img.propertyNames()))
 
