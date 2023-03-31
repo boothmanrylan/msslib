@@ -371,6 +371,8 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
         visParams = {}
     if 'dimensions' not in visParams:
         visParams['dimensions'] = 512
+    if 'crs' not in visParams:
+        visParams['crs'] = 'EPSG:3857'
 
     imgList = col.sort('system:time_start').toList(col.size())
 
@@ -379,6 +381,8 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
             ['green', 'red', 'red_edge', 'nir', 'BQA']
         )
 
+        img = applyQaMask(img)
+
         if toa:
             img = calcToa(img)
         elif rad:
@@ -386,6 +390,8 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
 
         if ndvi:
             img = addNdvi(img)
+
+        img = img.unmask(0).visualize(**visParams)
 
         print(img.get('LANDSAT_SCENE_ID').getInfo())
         display(Image(url=img.getThumbUrl(visParams)))
