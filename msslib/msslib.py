@@ -342,7 +342,8 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
 # IMAGE ASSESSMENT
 ##############################################################################
 
-def viewThumbnails(col, visParams=None, thumbnailParams=None, preprocess=None):
+def viewThumbnails(col, visParams=None, thumbnailParams=None,
+                   preprocess=None, sort=False):
     """Prints image collection thumbnails with accompanying image IDs.
 
     Useful for quickly evaluating a collection. The image IDs can be recorded
@@ -357,6 +358,7 @@ def viewThumbnails(col, visParams=None, thumbnailParams=None, preprocess=None):
         preprocess: A function that takes an ee.Image and returns an ee.Image
             and calculates toa, adds bands etc. to make the image ready for
             visualization.
+        sort: If true, sort by system:time_start before displaying
 
     Returns:
         None
@@ -376,7 +378,10 @@ def viewThumbnails(col, visParams=None, thumbnailParams=None, preprocess=None):
     if preprocess is None:
         preprocess = calcToa
 
-    imgList = col.sort('system:time_start').toList(col.size())
+    if sort:
+        col = col.sort('system:time_start')
+
+    imgList = col.toList(col.size())
 
     for i in imgList.getInfo():
         img = ee.Image(i['id']).rename(
