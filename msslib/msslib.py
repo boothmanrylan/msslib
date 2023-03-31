@@ -439,12 +439,12 @@ def scaleDn(img, unit):
         ee.Image.constant(img.get(biasBands.getString(2))),
         ee.Image.constant(img.get(biasBands.getString(3)))).toFloat()
 
-    dnImg = img.select([0, 1, 2, 3])
+    dnImg = img.select([0, 1, 2, 3]).multiply(gainImg).add(biasImg).toFloat()
 
-    return ee.Image(
-        dnImg.multiply(gainImg)
-        .add(biasImg)
-        .toFloat()
+    # TODO: can get around needing to copy properties and add the QA band
+    # by addBands with overwrite: img.addBands(dnImg, None, True)
+
+    return ee.Image(dnImg
         .addBands(img.select('BQA'))
         .copyProperties(img, img.propertyNames()))
 
@@ -523,7 +523,10 @@ def getQaMask(img):
     Returns:
         A image with one boolean band named BQA_mask.
     """
-    return img.select('BQA').eq(32).rename('BQA_mask')
+    # return img.select('BQA').eq(32).rename('BQA_mask')
+    qaPixelMask = img.select('QA_PIXEL').bitwiseAnd(int('11111', 2)).eq(0)
+    qaRadsatMask = img.select('QA_RADSAT').eq(0)
+    return qaPixelMask.updateMask(qaRadsatMask).rename('QA_mask')
 
 
 def addQaMask(img):
