@@ -620,6 +620,29 @@ def dilateZeroOne(img, pixel_distance, ground_distance):
     d = d.multiply(ee.Image.pixelArea().sqrt())
     return d.lt(ground_distance)
 
+def waterLayerJB(img):
+    """Justin Braaten's version of the water layer
+    See docstring for waterLayer method for explanation of differences
+    
+    Args:
+        img: An ee.image originating from msslib.getCol() and msslib.calcToa().
+
+    Returns:
+        An ee.Image with one band called 'water' that is 1 where there is water
+        and zero otherwise.
+    """
+    # threshold on NDVI
+    mssWater = img.normalizedDifference(['nir', 'red']).lt(-0.085)
+
+    # Get max extent of water 1985-2018
+    waterExtent = ee.Image('JRC/GSW_1/GlobalSurfaceWater') \
+        .select('max_extent')
+
+    # Get intersection of MSS water and max extent.
+    return mssWater.multiply(waterExtent) \
+        .reproject(img.projection()) \
+        .rename('water')
+
 
 def waterLayer(img):
     """Returns the MSScvm water layer.
@@ -779,7 +802,7 @@ def shadowLayer(img, dem, clouds):
     # pixels.
     return shadows.multiply(water.Not()) \
         .multiply(cloudProj) \
-        .focal_max(2) \
+        .focal_max(2) \ #TODO: should be focalMax()?!?
         .reproject(img.projection()) \
         .rename('shadow')
 
