@@ -802,7 +802,7 @@ def shadowLayer(img, dem, clouds):
     # pixels.
     return shadows.multiply(water.Not()) \
         .multiply(cloudProj) \
-        .focal_max(2) \ #TODO: should be focalMax()?!?
+        .focal_max(2) \
         .reproject(img.projection()) \
         .rename('shadow')
 
