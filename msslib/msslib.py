@@ -342,8 +342,7 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
 # IMAGE ASSESSMENT
 ##############################################################################
 
-
-def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
+def viewThumbnails(col, visParams=None, thumbnailParams=None, preprocess=None):
     """Prints image collection thumbnails with accompanying image IDs.
 
     Useful for quickly evaluating a collection. The image IDs can be recorded
@@ -351,16 +350,13 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
 
     Args:
         col: The ee.ImageCollection to be displayed, should originate
-            from msslib.getCol() and any other preprocessing necessary such as
-            msslib.calcToa() or msslib.addNdvi().
+            from msslib.getCol().
         visParams: A dictionary of visualization parameters passed to
-            getThumbUrl().
-        toa: A bool indicating whether to call calcToa on images before they
-            are displayed.
-        rad: A bool indicating whether to call calcRad on images before they
-            are displayed.
-        ndvi: A bool indicating whehter to call addNdvi on image before they
-            are displayed.
+            ee.Image.visualize().
+        thumbnailParams: A dictionaray passed to ee.Image.getThumbUrl().
+        preprocess: A function that takes an ee.Image and returns an ee.Image
+            and calculates toa, adds bands etc. to make the image ready for
+            visualization.
 
     Returns:
         None
@@ -368,11 +364,17 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
     print('Please wait patiently, images may not load immediately')
 
     if visParams is None:
-        visParams = {}
-    if 'dimensions' not in visParams:
-        visParams['dimensions'] = 512
-    if 'crs' not in visParams:
-        visParams['crs'] = 'EPSG:3857'
+        visParams = visDn
+
+    if thumbnailParams is None:
+        thumbnailParams = {}
+    if 'dimensions' not in thumbnailParams:
+        thumbnailParams['dimensions'] = 512
+    if 'crs' not in thumbnailParams:
+        thumbnailParams['crs'] = 'EPSG:3857'
+
+    if preprocess is None:
+        preprocess = calcToa
 
     imgList = col.sort('system:time_start').toList(col.size())
 
@@ -381,20 +383,11 @@ def viewThumbnails(col, visParams=None, toa=True, rad=False, ndvi=False):
             ['green', 'red', 'red_edge', 'nir', 'BQA']
         )
 
-        img = applyQaMask(img)
-
-        if toa:
-            img = calcToa(img)
-        elif rad:
-            img = calcRad(img)
-
-        if ndvi:
-            img = addNdvi(img)
-
-        img = img.unmask(0).visualize(**visParams)
-
         print(img.get('LANDSAT_SCENE_ID').getInfo())
-        display(Image(url=img.getThumbUrl(visParams)))
+
+        img = preprocess(img)
+        img = img.unmask(0).visualize(**visParams)
+        display(Image(url=img.getThumbUrl(thumbnailParams)))
 
 
 ##############################################################################
