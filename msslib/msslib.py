@@ -47,6 +47,13 @@ visDn = {
     'gamma': [1.2, 1.2, 1.2]
 }
 
+visDn2 = {
+    'bands': ['nir', 'red_edge', 'red'],
+    'min': [47, 20, 20],
+    'max': [142, 142, 92],
+    'gamma': [1.2, 1.2, 1.2]
+}
+
 # A dictionary of false color visualization parameters for MSS radiance images.
 visRad = {
     'bands': ['nir', 'red', 'green'],
@@ -61,6 +68,13 @@ visToa = {
     'bands': ['nir', 'red', 'green'],
     'min': [0.0896, 0.0322, 0.0464],
     'max': [0.2627, 0.1335, 0.1177],
+    'gamma': [1.2, 1.2, 1.2]
+}
+
+visToa2 = {
+    'bands': ['nir', 'red_edge', 'red'],
+    'min': [0.0896, 0.0322, 0.0322],
+    'max': [0.2627, 0.2627, 0.1335],
     'gamma': [1.2, 1.2, 1.2]
 }
 
