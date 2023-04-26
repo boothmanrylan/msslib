@@ -779,13 +779,15 @@ def topoCorrB4(img, dem):
     return img.select('nir').multiply(correction)
 
 
-def shadowLayer(img, dem, clouds):
+def shadowLayer(img, dem, clouds, maxDist=50):
     """Returns the MSScvm shafow layer.
 
     Args:
         img: An ee.Image originating from msslib.getCol() and msslib.calcToa()
         dem: An ee.Image digital elevation model
         clouds: An ee.Image originating from msslib.cloudLayer().
+        maxDist: int, the maximum distance in pixels away from the cloud layer
+            to search for cloud shadow, passed to directionalDistanceTransform 
 
     Returns:
         An ee.Image with one band named shadow that is one where there is
@@ -802,7 +804,7 @@ def shadowLayer(img, dem, clouds):
     shadow_azimuth = ee.Number(90).subtract(
         ee.Number(img.get('SUN_AZIMUTH'))
     )
-    cloudProj = clouds.directionalDistanceTransform(shadow_azimuth, 50) \
+    cloudProj = clouds.directionalDistanceTransform(shadow_azimuth, maxDist) \
         .reproject(crs=img.projection(), scale=60) \
         .select('distance') \
         .gt(0) \
@@ -819,7 +821,7 @@ def shadowLayer(img, dem, clouds):
         .rename('shadow')
 
 
-def addMsscvm(img):
+def addMsscvm(img, shadowSearchDist=50):
     """Adds the MSScvm band to the input image.
 
     The new band will be named 'msscvm'. Values of 0 designate pixels as clear,
@@ -827,30 +829,34 @@ def addMsscvm(img):
 
     Args:
         img: An ee.Image originating from msslib.getCol() and msslib.calcToa()
+        shadowSearchDist: int, the maximum number of pixels away from cloud to
+            search for cloud shadow
 
     Returns:
         The input ee.Image with new band named msscvm.
     """
     dem = getDem(img)
     clouds = cloudLayer(img).selfMask()
-    shadows = shadowLayer(img, dem, clouds).selfMask().add(1)
+    shadows = shadowLayer(img, dem, clouds, shadowSearchDist).selfMask().add(1)
     return img.addBands(shadows.blend(clouds).unmask(0).rename('msscvm'))
 
 
-def applyMsscvm(img):
+def applyMsscvm(img, shadowSearchDist=50):
     """Applies the MSScvm mask to the input image.
 
     Pixels identified as cloud or cloud shadow in the MSScvm will be masked.
 
     Args:
         img: An ee.Image originating from msslib.getCol() and msslib.calcToa()
+        showdowSearchDist: int, the maximum number of pixels away from cloud to
+            search for cloud shadow
 
     Returns:
         The input ee.Image with clouds and cloud shadow masked.
     """
     dem = getDem(img)
     clouds = cloudLayer(img)
-    shadows = shadowLayer(img, dem, clouds)
+    shadows = shadowLayer(img, dem, clouds, shadowSearchDist)
     mask = clouds.add(shadows).eq(0)
     return img.updateMask(mask)
 
