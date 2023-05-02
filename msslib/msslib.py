@@ -83,6 +83,8 @@ visNdvi = {
     'bands': ['ndvi'], 'min': 0.1, 'max': 0.8
 }
 
+_BAND_NAMES = ['green', 'red', 'red_edge', 'nir', 'QA_PIXEL', 'QA_RADSAT']
+
 # An example MSS 5 image.
 exMss5 = ee.Image('LANDSAT/LM05/C01/T2/LM05_045029_19840728')
 
@@ -268,12 +270,12 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
            includeIds=None):
     """Assembles a Landsat MSS image collection.
 
-    Includes images from USGS Collection 1 T1 and T2 acquired by satellites
+    Includes images from USGS Collection 2 T1 and T2 acquired by satellites
     1-5. Removes L1G images and images without a complete set of reflectance
     bands. Additional default and optional filtering criteria are applied,
     including by bounds, geometric error, cloud cover, year, and day of year.
     All image bands are named consistently: ['green', 'red', 'red_edge', 'nir',
-    'BQA']. Adds 'wrs' property to all images designating them as 'WRS-1' or
+    QA_PIXEL']. Adds 'wrs' property to all images designating them as 'WRS-1' or
     'WRS-2'.
 
     Args:
@@ -314,32 +316,26 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
 
     # gather and filter all WRS-1 images
     if '1' in wrs:
-        mss1T1 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM01/C01/T1'))
-        mss1T2 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM01/C01/T2'))
-        mss2T1 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM02/C01/T1'))
-        mss2T2 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM02/C01/T2'))
-        mss3T1 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM03/C01/T1'))
-        mss3T2 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM03/C01/T2'))
+        mss1T1 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM01/C02/T1'))
+        mss1T2 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM01/C02/T2'))
+        mss2T1 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM02/C02/T1'))
+        mss2T2 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM02/C02/T2'))
+        mss3T1 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM03/C02/T1'))
+        mss3T2 = _wrs1_filter(ee.ImageCollection('LANDSAT/LM03/C02/T2'))
 
         wrs1Col = mss1T1.merge(mss1T2).merge(mss2T1).merge(mss2T2) \
             .merge(mss3T1).merge(mss3T2) \
-            .map(lambda img: (
-                img.rename(['green', 'red', 'red_edge', 'nir', 'BQA'])
-                .set('wrs', 'WRS-1')
-            ))
+            .map(lambda img: img.rename(_BAND_NAMES).set('wrs', 'WRS-1'))
 
     # gather and filter all WRS-2 images
     if '2' in wrs:
-        mss4T1 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM04/C01/T1'))
-        mss4T2 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM04/C01/T2'))
-        mss5T1 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM05/C01/T1'))
-        mss5T2 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM05/C01/T2'))
+        mss4T1 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM04/C02/T1'))
+        mss4T2 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM04/C02/T2'))
+        mss5T1 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM05/C02/T1'))
+        mss5T2 = _wrs2_filter(ee.ImageCollection('LANDSAT/LM05/C02/T2'))
 
         wrs2Col = mss4T1.merge(mss4T2).merge(mss5T1).merge(mss5T2) \
-            .map(lambda img: (
-                img.rename(['green', 'red', 'red_edge', 'nir', 'BQA'])
-                .set('wrs', 'WRS-2')
-            ))
+            .map(lambda img: img.rename(_BAND_NAMES).set('wrs', 'WRS-2'))
 
     # merge and sort by time the WRS-1 and WRS-2 collections
     return wrs1Col.merge(wrs2Col).map(lambda img: (
@@ -398,9 +394,7 @@ def viewThumbnails(col, visParams=None, thumbnailParams=None,
     imgList = col.toList(col.size())
 
     for i in imgList.getInfo():
-        img = ee.Image(i['id']).rename(
-            ['green', 'red', 'red_edge', 'nir', 'BQA']
-        )
+        img = ee.Image(i['id']).rename(_BAND_NAMES)
 
         print(img.get('LANDSAT_SCENE_ID').getInfo())
 
@@ -457,7 +451,7 @@ def scaleDn(img, unit):
     # by addBands with overwrite: img.addBands(dnImg, None, True)
 
     return ee.Image(dnImg
-        .addBands(img.select('BQA'))
+        .addBands(img.select('QA_PIXEL'))
         .copyProperties(img, img.propertyNames()))
 
 
@@ -635,7 +629,7 @@ def dilateZeroOne(img, pixel_distance, ground_distance):
 def waterLayerJB(img):
     """Justin Braaten's version of the water layer
     See docstring for waterLayer method for explanation of differences
-    
+
     Args:
         img: An ee.image originating from msslib.getCol() and msslib.calcToa().
 
@@ -787,7 +781,7 @@ def shadowLayer(img, dem, clouds, maxDist=50):
         dem: An ee.Image digital elevation model
         clouds: An ee.Image originating from msslib.cloudLayer().
         maxDist: int, the maximum distance in pixels away from the cloud layer
-            to search for cloud shadow, passed to directionalDistanceTransform 
+            to search for cloud shadow, passed to directionalDistanceTransform
 
     Returns:
         An ee.Image with one band named shadow that is one where there is
