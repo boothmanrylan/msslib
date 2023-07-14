@@ -488,7 +488,7 @@ def addNdvi(img):
     Returns:
         The input image with a new band containing the NDVI and named 'ndvi'.
     """
-    ndvi = img.normalizedDifferenece(['nir', 'red']).rename('ndvi')
+    ndvi = img.normalizedDifference(['nir', 'red']).rename('ndvi')
     return ee.Image(
         img.addBands(ndvi).copyProperties(img, img.propertyNames()))
 
