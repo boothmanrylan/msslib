@@ -348,6 +348,32 @@ def getCol(aoi=None, maxRmseVerify=0.5, maxCloudCover=50, wrs='1&2',
     )).sort('system:time_start')
 
 
+def process(img):
+    """ Process an image to be consistent with images returned by getCol.
+
+    Renames bands to ['green', 'red', 'red_edge', 'nir', 'QA_PIXEL']
+    Adds the following properties: ['wrs', 'year', 'doy']
+
+    Any downstream function expecting an image output by getCol should work
+    with an image output by this function as long as the function does not need
+    to work with the 'start_doy', and 'end_doy' properties as there is no for
+    them equivalent that can be added by this method
+
+    Args:
+        img: MSS ee.Image
+
+    Returns:
+        ee.Image
+    """
+    img = img.rename(_BAND_NAMES)
+    return img.set({
+        'doy': img.date().getRelative('day', 'year'),
+        'year': img.date().get('year'),
+        'wrs': ee.String('WRS-').cat(img.getNumber('WRS_TYPE').format('%d')),
+    })
+
+
+
 ##############################################################################
 # IMAGE ASSESSMENT
 ##############################################################################
