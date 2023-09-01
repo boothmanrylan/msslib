@@ -34,7 +34,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import folium
 import ee
 import math
 from IPython.display import Image, display
@@ -879,75 +878,3 @@ def applyMsscvm(img, shadowSearchDist=50):
     shadows = shadowLayer(img, dem, clouds, shadowSearchDist)
     mask = clouds.add(shadows).eq(0)
     return img.updateMask(mask)
-
-
-###############################################################################
-# FOLIUM
-###############################################################################
-
-
-def add_ee_layer(self, ee_object, vis_params, name):
-    """Allows Engine layers to be added to folium Map objects.
-
-    Based on the add_ee_layer defined in this colab notebook:
-    https://colab.research.google.com/github/giswqs/qgis-earthengine-examples/blob/master/Folium/ee-api-folium-setup.ipynb
-
-    To use:
-        ```
-        import msslib
-        import folium
-        folium.Map.add_ee_layer = msslib.add_ee_layer
-
-        my_map = folium.Map(...)
-        my_map.add_ee_layer(...)
-        display(my_map)
-        ```
-
-    Args:
-        ee_object: The Earth Engine object to display. Can be an ee.Image,
-            an ee.ImageCollection, a ee.FeatureCollection, or an ee.Geometry
-        vis_params: A dictionary containing the visualization parameters.
-        name: A String to name the folium layer as.
-
-    Returns:
-        None
-    """
-    try:
-        if isinstance(ee_object, ee.image.Image):
-            map_id_dict = ee.Image(ee_object).getMapId(vis_params)
-            folium.raster_layers.TileLayer(
-                tiles=map_id_dict['tile_fetcher'].url_format,
-                attr='Google Earth Engine',
-                name=name,
-                overlay=True,
-                control=True
-            ).add_to(self)
-        elif isinstance(ee_object, ee.imagecollection.ImageCollection):
-            ee_object_new = ee_object.mosaic()
-            map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
-            folium.raster_layers.TileLayer(
-                tile=map_id_dict['tile_fetcher'].url_format,
-                attr='Google Earth Engine',
-                name=name,
-                overlay=True,
-                control=True
-            ).add_to(self)
-        elif isinstance(ee_object, ee.geometry.Geometry):
-            folium.GeoJson(
-                data=ee_object.getInfo(),
-                name=name,
-                overlay=True,
-                control=True
-            ).add_to(self)
-        elif isinstance(ee_object, ee.featurecollection.FeatureCollection):
-            ee_object_new = ee.Image().paint(ee_object, 0, 2)
-            map_id_dict = ee.Image(ee_object_new).getMapId(vis_params)
-            folium.raster_layers.TileLayer(
-                tiles=map_id_dict['tile_fetcher'].url_format,
-                attr='Google Earth Engine',
-                name=name,
-                overlay=True,
-                control=True
-            ).add_to(self)
-    except Exception as E:
-        print(E, '\nCould not display ', name)
