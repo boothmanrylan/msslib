@@ -12,21 +12,7 @@ cloud mask.
 
 ### Installation
 
-Clone the repository: `git clone https://github.com/boothmanrylan/msslib.git`
-
-The file structure should be:
-
-```
-msslib
-|---msslib
-|   |---__init__.py
-|   |---msslib.py
-|--setup.py
-|--msslib.js
-|--README.md
-```
-
-From the top msslib directory run: `pip install .`
+`pip install msslib`
 
 ### Usage
 
