@@ -9,5 +9,5 @@ setup(
     author='Rylan Boothman',
     author_email='boothmanrylan@gmail.com',
     packages=['msslib'],
-    install_requires=['earthengine-api', 'IPython', 'folium']
+    install_requires=['earthengine-api', 'IPython']
 )
