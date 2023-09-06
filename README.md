@@ -16,14 +16,7 @@ cloud mask.
 
 ### Usage
 
-Import the earthengine api, authenticate it, and initialize it *before*
-importing msslib.
-
 ```
-import ee
-ee.Authenticate()
-ee.Initialize()
-
 from msslib import msslib
 ```
 

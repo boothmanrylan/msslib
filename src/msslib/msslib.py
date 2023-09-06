@@ -84,9 +84,6 @@ visNdvi = {
 
 _BAND_NAMES = ['green', 'red', 'red_edge', 'nir', 'QA_PIXEL', 'QA_RADSAT']
 
-# An example MSS 5 image.
-exMss5 = ee.Image('LANDSAT/LM05/C01/T2/LM05_045029_19840728')
-
 ##############################################################################
 # FETCH COLLECTIONS
 ##############################################################################
