@@ -689,8 +689,12 @@ def waterLayer(img):
         An ee.Image with one band called 'water' that is 1 where there is water
         and zero otherwise.
     """
+    # store geometry to clip after calling lt with a constant
+    geom = img.geometry()
+
     # threshold on NDVI
     mssWater = img.normalizedDifference(['nir', 'red']).lt(0.2)
+    mssWater = mssWater.clip(geom)
 
     # get the max extent of water 1985-2018
     waterExtent = ee.Image('JRC/GSW1_1/GlobalSurfaceWater') \
